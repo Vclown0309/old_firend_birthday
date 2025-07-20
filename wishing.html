@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 禁用缓存 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>许愿池</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to top, #001f3f, #003366);
+      font-family: '微软雅黑', sans-serif;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    #wish-input {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      width: 240px;
+    }
+    #send-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(to right, #00d2ff, #3a7bd5);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .fade-out {
+      animation: fadeOut 1.5s forwards;
+    }
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.2);
+      }
+    }
+    .circle-explode {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff22 0%, #ffffff00 70%);
+      animation: expandFade 1.2s ease-out forwards;
+      z-index: 2;
+    }
+    @keyframes expandFade {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2 id="wish-text">许下你的心愿吧</h2>
+  <input id="wish-input" placeholder="请输入你的愿望...">
+  <button id="send-btn" onclick="sendWish()">放飞</button>
+
+  <script>
+    let accompanimentAudio = null;
+    let birthdaySongAudio = null;
+
+    // 初始化音频
+    function initAudio() {
+      const randomParam = `?v=${Date.now()}`;
+      accompanimentAudio = new Audio(`./生日祝福歌.mp3${randomParam}`); 
+      birthdaySongAudio = new Audio(`./生日祝福歌.mp3${randomParam}`); 
+    }
+
+    function sendWish() {
+      const wish = document.getElementById('wish-input').value.trim();
+      if (!wish) {
+        alert('愿望不能为空哦！');
+        return;
+      }
+      // 淡出并加入爆炸特效
+      document.body.classList.add('fade-out');
+      const circle = document.createElement('div');
+      circle.className = 'circle-explode';
+      circle.style.left = 'calc(50% - 150px)';
+      circle.style.top = 'calc(50% - 150px)';
+      document.body.appendChild(circle);
+
+      // 停止伴奏并播放生日祝福歌
+      if (accompanimentAudio) {
+        accompanimentAudio.pause();
+        accompanimentAudio.currentTime = 0;
+      }
+      if (birthdaySongAudio) {
+        birthdaySongAudio.play();
+      }
+
+      setTimeout(() => {
+        window.location.href = 'blessing.html';
+      }, 1600);
+    }
+
+    // 初始化音频
+    initAudio();
+  </script>
+</body>
+</html>

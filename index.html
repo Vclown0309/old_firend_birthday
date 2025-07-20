@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 禁用缓存 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>生日祝福</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: '微软雅黑', sans-serif;
+      background: linear-gradient(to top, #1a1a40, #000);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #name-input {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      width: 200px;
+    }
+    #start-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    #start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .hidden {
+      display: none;
+    }
+    .lyrics-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .word-btn {
+      padding: 8px 14px;
+      background: white;
+      color: #1a1a40;
+      border-radius: 20px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    .word-btn:hover {
+      background: #ccc;
+    }
+    .word-btn.used {
+      background: #888;
+      pointer-events: none;
+    }
+    #selected-lyrics {
+      margin-top: 20px;
+      font-size: 18px;
+      min-height: 30px;
+    }
+    #undo-btn, #next-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #f39c12;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #next-btn {
+      background: #2ecc71;
+    }
+    #repeat-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #3498db;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #audio-status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="page-1">
+    <h1>欢迎来到生日祝福入口</h1>
+    <input id="name-input" placeholder="请输入你的名字...">
+    <button id="start-btn" onclick="startJourney()">进入</button>
+    <div id="audio-status"></div>
+  </div>
+
+  <div id="page-2" class="hidden">
+    <h2>请拼出正确的歌词：</h2>
+    <div class="lyrics-container" id="word-bank"></div>
+    <div id="selected-lyrics"></div>
+    <button id="undo-btn" onclick="undoWord()">撤回</button>
+    <button id="next-btn" class="hidden" onclick="goToWishingPage()">下一步</button>
+    <button id="repeat-btn" onclick="repeatAudio()">重复播放</button>
+    <div id="audio-status2"></div>
+  </div>
+
+  <script>
+    // 音频对象
+    let audio = null;
+    let audioInitialized = false;
+    let accompanimentAudio = null; // 伴奏音频
+
+    // 歌词相关变量
+    const correctLyrics = "采一朵送给我小小的姑娘";
+    const words = [...correctLyrics];
+    let selected = [];
+    let usedElements = [];
+
+    // 初始化音频
+    function initAudio() {
+      if (audioInitialized) return;
+
+      try {
+        const randomParam = `?v=${Date.now()}`;
+        audio = new Audio(`./萱草花片段.mp3${randomParam}`);
+        audioInitialized = true;
+
+        // 音频加载成功
+        audio.onloadedmetadata = () => {
+          updateAudioStatus('音频已就绪');
+        };
+
+        // 音频播放错误
+        audio.onerror = () => {
+          updateAudioStatus('音频加载失败，请检查路径');
+          console.error('音频错误:', audio.error);
+        };
+
+        // 音频播放结束
+        audio.onended = () => {
+          updateAudioStatus('音频播放完毕');
+        };
+
+        updateAudioStatus('音频正在初始化...');
+      } catch (error) {
+        updateAudioStatus('初始化音频时出错');
+        console.error('初始化音频错误:', error);
+      }
+    }
+
+    // 初始化伴奏音频
+    function initAccompanimentAudio() {
+      if (accompanimentAudio) return;
+      try {
+        const randomParam = `?v=${Date.now()}`;
+        accompanimentAudio = new Audio(`./accompaniment.mp3${randomParam}`); 
+        accompanimentAudio.onloadedmetadata = () => {
+          updateAudioStatus('伴奏音频已就绪');
+        };
+        accompanimentAudio.onerror = () => {
+          updateAudioStatus('伴奏音频加载失败，请检查路径');
+          console.error('伴奏音频错误:', accompanimentAudio.error);
+        };
+      } catch (error) {
+        updateAudioStatus('初始化伴奏音频时出错');
+        console.error('初始化伴奏音频错误:', error);
+      }
+    }
+
+    // 更新音频状态显示
+    function updateAudioStatus(message) {
+      const statusEl = document.getElementById('audio-status');
+      const statusEl2 = document.getElementById('audio-status2');
+      if (statusEl) statusEl.textContent = message;
+      if (statusEl2) statusEl2.textContent = message;
+    }
+
+    // 开始旅程
+    function startJourney() {
+      const name = document.getElementById('name-input').value.trim();
+      if (!name) {
+        alert('请输入名字再开始');
+        return;
+      }
+      if (name !== '张妍') {
+        alert('只有张妍才能进入哦 :)');
+        return;
+      }
+
+      // 确保音频已初始化
+      if (!audioInitialized) {
+        initAudio();
+      }
+
+      // 播放音频
+      playAudio();
+
+      document.getElementById('page-1').classList.add('hidden');
+      document.getElementById('page-2').classList.remove('hidden');
+      loadWordBank();
+    }
+
+    // 播放音频（处理自动播放限制）
+    function playAudio() {
+      if (!audio) return;
+
+      updateAudioStatus('尝试播放音频...');
+
+      // 尝试播放
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          // 自动播放成功
+          updateAudioStatus('音频正在播放');
+        }).catch(error => {
+          // 自动播放失败，通常是由于浏览器限制
+          updateAudioStatus('浏览器阻止了自动播放，请点击按钮播放');
+          console.error('自动播放被阻止:', error);
+
+          // 添加一个用户交互按钮来解锁音频
+          const startBtn = document.getElementById('start-btn');
+          startBtn.onclick = () => {
+            audio.play().then(() => {
+              updateAudioStatus('音频已开始播放');
+              startBtn.onclick = startJourney; // 恢复原始功能
+            }).catch(err => {
+              updateAudioStatus('无法播放音频，请刷新页面重试');
+              console.error('再次尝试播放失败:', err);
+            });
+          };
+        });
+      }
+    }
+
+    // 加载歌词库
+    function loadWordBank() {
+      const bank = document.getElementById('word-bank');
+      const shuffled = words.map((word, index) => ({ word, index })).sort(() => Math.random() - 0.5);
+      shuffled.forEach(({ word, index }) => {
+        const span = document.createElement('span');
+        span.className = 'word-btn';
+        span.innerText = word;
+        span.onclick = () => selectWord(word, span);
+        bank.appendChild(span);
+      });
+    }
+
+    // 选择单词
+    function selectWord(word, element) {
+      selected.push(word);
+      usedElements.push(element);
+      element.classList.add('used');
+      updateSelectedLyrics();
+    }
+
+    // 撤销选择
+    function undoWord() {
+      if (selected.length > 0) {
+        selected.pop();
+        const lastEl = usedElements.pop();
+        if (lastEl) lastEl.classList.remove('used');
+      }
+      updateSelectedLyrics();
+    }
+
+    // 更新已选歌词
+    function updateSelectedLyrics() {
+      const current = selected.join('');
+      document.getElementById('selected-lyrics').innerText = current;
+      document.getElementById('next-btn').classList.toggle('hidden', current !== correctLyrics);
+    }
+
+    // 前往祝福页面
+    function goToWishingPage() {
+      initAccompanimentAudio();
+      accompanimentAudio.play();
+      window.location.href = 'wishing.html';
+    }
+
+    // 重复播放音频
+    function repeatAudio() {
+      if (!audio) {
+        initAudio();
+        audio.play();
+        return;
+      }
+
+      updateAudioStatus('重新播放音频');
+      audio.currentTime = 0;
+      audio.play().catch(err => {
+        updateAudioStatus('播放失败，请点击按钮重试');
+        console.error('重复播放失败:', err);
+      });
+    }
+
+    // 为了确保用户交互后才初始化音频
+    document.addEventListener('click', function initOnFirstClick() {
+      initAudio();
+      document.removeEventListener('click', initOnFirstClick);
+    }, { once: true });
+  </script>
+</body>
+</html>

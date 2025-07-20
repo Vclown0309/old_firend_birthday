@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 禁用缓存 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>祝福时刻</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#7C3AED', // 主色调：紫色
+            secondary: '#F97316', // 辅助色：橙色
+            accent: '#EC4899', // 强调色：粉色
+            dark: '#1A1A40', // 深色背景
+            gold: '#F59E0B', // 金色
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-glow {
+        text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3);
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+      .animate-pulse-soft {
+        animation: pulseSoft 3s infinite ease-in-out;
+      }
+      .bg-gradient-custom {
+        background: linear-gradient(135deg, #1a1a40 0%, #000 100%);
+      }
+      .bg-pattern {
+        background-image: 
+          radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+          radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+        background-position: 0 0, 25px 25px;
+      }
+      .star {
+        position: absolute;
+        background-color: white;
+        border-radius: 50%;
+        animation: twinkle 3s infinite ease-in-out;
+      }
+      .comet {
+        position: absolute;
+        background: linear-gradient(90deg, transparent, white);
+        width: 100px;
+        height: 2px;
+        opacity: 0;
+        transform-origin: 0 50%;
+      }
+      .text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .text-gradient-1 {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(to right, #F97316, #F59E0B);
+      }
+      .text-gradient-2 {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(to right, #EC4899, #8B5CF6);
+      }
+      .text-gradient-3 {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(to right, #3B82F6, #10B981);
+      }
+      .sponsor-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(90deg, #F59E0B, #EC4899, #8B5CF6);
+        background-size: 200% auto;
+        animation: gradientShift 5s ease infinite;
+      }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes comet {
+      0% { transform: rotate(var(--angle)) translateX(0); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: rotate(var(--angle)) translateX(-1000px); opacity: 0; }
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-custom bg-pattern min-h-screen flex flex-col items-center justify-center overflow-hidden p-4">
+  <!-- 星空背景 -->
+  <div id="stars" class="fixed inset-0 pointer-events-none z-0"></div>
+  
+  <!-- 彗星容器 -->
+  <div id="comets-container" class="fixed inset-0 pointer-events-none z-0"></div>
+  
+  <!-- 烟花Canvas -->
+  <canvas id="fireworks-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+  <div class="container mx-auto text-center relative z-10 max-w-2xl">
+    <h1 class="text-[clamp(2.5rem,8vw,5rem)] font-bold mb-8 bg-gradient-to-r from-pink-400 via-purple-500 to-blue-500 text-gradient text-shadow-lg animate-float">
+      生日快乐
+    </h1>
+
+    <div class="space-y-10 mb-12">
+      <p id="blessing-1" class="text-[clamp(1.3rem,4vw,2rem)] font-medium text-gradient-1 text-shadow-lg opacity-0">
+        <i class="fa fa-heart text-accent mr-3"></i>
+        愿你平安喜乐，前程似锦
+      </p>
+      <p id="blessing-2" class="text-[clamp(1.3rem,4vw,2rem)] font-medium text-gradient-2 text-shadow-lg opacity-0">
+        <i class="fa fa-star text-secondary mr-3"></i>
+        愿你岁岁年年平安喜乐，万事胜意！
+      </p>
+      <p id="blessing-3" class="text-[clamp(1.3rem,4vw,2rem)] font-medium text-gradient-3 text-shadow-lg opacity-0">
+        <i class="fa fa-heartbeat text-primary mr-3"></i>
+        愿你想念的人也恰好在想你
+      </p>
+    </div>
+
+    <div class="music-control mt-12 bg-white/10 backdrop-blur-xl rounded-full p-2 inline-block transform transition-all hover:scale-105">
+      <audio controls autoplay loop class="w-72">
+        <source src="生日祝福歌.mp3?v=<?php echo time(); ?>" type="audio/mpeg">
+        你的浏览器不支持音频播放。
+      </audio>
+    </div>
+
+    <!-- 赞助信息 - 强化版 -->
+    <div class="sponsor-section mt-16 relative">
+      <div class="absolute -inset-2 bg-gradient-to-r from-gold/20 via-accent/20 to-primary/20 rounded-full blur-xl opacity-70 animate-pulse-soft"></div>
+      <div class="relative bg-black/40 backdrop-blur-md px-6 py-4 rounded-full inline-block border border-white/10">
+        <p class="text-[clamp(1rem,2.5vw,1.4rem)] font-bold sponsor-gradient text-shadow-glow animate-pulse-soft">
+          <i class="fa fa-gift mr-2"></i>
+          由黄瓜和小平 友情制作 & 专属祝福
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 创建星空背景
+    function createStars() {
+      const starsContainer = document.getElementById('stars');
+      starsContainer.innerHTML = '';
+      
+      for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        
+        // 随机位置
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        
+        // 随机大小和亮度
+        const size = Math.random() * 3 + 1;
+        const delay = Math.random() * 5;
+        const duration = Math.random() * 4 + 2;
+        
+        // 5% 的星星会更大更亮
+        if (Math.random() < 0.05) {
+          star.classList.add('animate-pulse');
+          star.style.width = `${size + 1}px`;
+          star.style.height = `${size + 1}px`;
+        }
+        
+        star.style.cssText = `
+          left: ${x}%;
+          top: ${y}%;
+          width: ${size}px;
+          height: ${size}px;
+          animation-delay: ${delay}s;
+          animation-duration: ${duration}s;
+        `;
+        
+        starsContainer.appendChild(star);
+      }
+    }
+    
+    // 创建彗星
+    function createComets() {
+      const cometsContainer = document.getElementById('comets-container');
+      
+      setInterval(() => {
+        if (Math.random() > 0.7) { // 30% 的概率生成彗星
+          const comet = document.createElement('div');
+          comet.classList.add('comet');
+          
+          // 随机角度和位置
+          const angle = Math.random() * 40 + 20; // 20-60度
+          const y = Math.random() * 60 + 20; // 20-80%
+          
+          // 随机颜色的彗星
+          const cometColors = [
+            'linear-gradient(90deg, transparent, white)',
+            'linear-gradient(90deg, transparent, #F97316)',
+            'linear-gradient(90deg, transparent, #EC4899)',
+            'linear-gradient(90deg, transparent, #7C3AED)',
+            'linear-gradient(90deg, transparent, #3B82F6)'
+          ];
+          
+          const color = cometColors[Math.floor(Math.random() * cometColors.length)];
+          
+          comet.style.cssText = `
+            left: 100%;
+            top: ${y}%;
+            --angle: ${angle}deg;
+            background: ${color};
+            animation: comet 4s linear forwards;
+          `;
+          
+          cometsContainer.appendChild(comet);
+          
+          // 动画结束后移除
+          setTimeout(() => {
+            comet.remove();
+          }, 4000);
+        }
+      }, 5000);
+    }
+
+    // 烟花效果类
+    class Fireworks {
+      constructor() {
+        this.canvas = document.getElementById('fireworks-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        this.fireworks = [];
+        this.particles = [];
+        this.animationId = null;
+        this.colors = [
+          '#7C3AED', '#EC4899', '#F97316', '#3B82F6', '#10B981', '#F59E0B',
+          '#8B5CF6', '#EC4899', '#3B82F6', '#F97316', '#F59E0B', '#EC4899'
+        ];
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', () => this.resize());
+        
+        // 初始烟花
+        for (let i = 0; i < 15; i++) {
+          setTimeout(() => {
+            this.createFirework();
+          }, i * 700);
+        }
+        
+        // 持续创建烟花
+        setInterval(() => {
+          for (let i = 0; i < Math.floor(Math.random() * 3) + 1; i++) {
+            setTimeout(() => {
+              this.createFirework();
+            }, Math.random() * 1000);
+          }
+        }, 3000);
+        
+        // 开始动画循环
+        this.animate();
+      }
+      
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+      
+      createFirework() {
+        const startX = Math.random() * this.canvas.width;
+        const startY = this.canvas.height;
+        const targetX = Math.random() * this.canvas.width;
+        const targetY = Math.random() * this.canvas.height * 0.5;
+        
+        const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+        
+        this.fireworks.push({
+          x: startX,
+          y: startY,
+          targetX,
+          targetY,
+          speed: 5 + Math.random() * 3,
+          radius: 3 + Math.random() * 2,
+          color,
+          trail: [],
+          trailLength: 10,
+          exploded: false
+        });
+      }
+      
+      explode(firework) {
+        // 烟花爆炸效果
+        const particleCount = 150 + Math.floor(Math.random() * 100);
+        const baseColor = firework.color;
+        
+        // 生成爆炸粒子
+        for (let i = 0; i < particleCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 5;
+          const particleColor = this.getParticleColor(baseColor);
+          
+          this.particles.push({
+            x: firework.targetX,
+            y: firework.targetY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 1 + Math.random() * 2,
+            color: particleColor,
+            alpha: 1,
+            gravity: 0.05,
+            friction: 0.99,
+            trail: [],
+            trailLength: 5,
+            life: 1,
+            decay: 0.01 + Math.random() * 0.01
+          });
+        }
+        
+        // 添加爆炸闪光效果
+        this.createFlash(firework.targetX, firework.targetY, baseColor);
+      }
+      
+      getParticleColor(baseColor) {
+        // 根据基础颜色生成变化的粒子颜色
+        const colors = {
+          '#7C3AED': ['#9D4EDD', '#C77DFF', '#E0AAFF'],
+          '#EC4899': ['#FF5C8A', '#FF75A0', '#FF8FA3'],
+          '#F97316': ['#FF9F1C', '#FFBF69', '#FFE066'],
+          '#3B82F6': ['#60A5FA', '#93C5FD', '#BFDBFE'],
+          '#10B981': ['#34D399', '#6EE7B7', '#A7F3D0'],
+          '#F59E0B': ['#FBBF24', '#FCD34D', '#FDE68A']
+        };
+        
+        const variations = colors[baseColor] || [baseColor];
+        return variations[Math.floor(Math.random() * variations.length)];
+      }
+      
+      createFlash(x, y, color) {
+        // 爆炸闪光效果
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 15 + Math.random() * 10, 0, Math.PI * 2);
+        
+        // 创建径向渐变
+        const gradient = this.ctx.createRadialGradient(
+          x, y, 0,
+          x, y, 15 + Math.random() * 10
+        );
+        
+        gradient.addColorStop(0, `${color}AA`);
+        gradient.addColorStop(1, `${color}00`);
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.fill();
+      }
+      
+      update() {
+        // 清除画布
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 更新和绘制烟花
+        for (let i = this.fireworks.length - 1; i >= 0; i--) {
+          const firework = this.fireworks[i];
+          
+          // 记录烟花轨迹
+          firework.trail.push({
+            x: firework.x,
+            y: firework.y,
+            color: firework.color
+          });
+          
+          if (firework.trail.length > firework.trailLength) {
+            firework.trail.shift();
+          }
+          
+          // 计算到目标的距离
+          const dx = firework.targetX - firework.x;
+          const dy = firework.targetY - firework.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // 如果到达目标位置，爆炸
+          if (distance < firework.speed) {
+            this.explode(firework);
+            this.fireworks.splice(i, 1);
+            continue;
+          }
+          
+          // 移动烟花
+          const angle = Math.atan2(dy, dx);
+          firework.x += Math.cos(angle) * firework.speed;
+          firework.y += Math.sin(angle) * firework.speed;
+          
+          // 绘制烟花轨迹
+          this.drawTrail(firework.trail);
+          
+          // 绘制烟花
+          this.ctx.beginPath();
+          this.ctx.arc(firework.x, firework.y, firework.radius, 0, Math.PI * 2);
+          this.ctx.fillStyle = firework.color;
+          this.ctx.fill();
+        }
+        
+        // 更新和绘制粒子
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const particle = this.particles[i];
+          
+          // 记录粒子轨迹
+          particle.trail.push({
+            x: particle.x,
+            y: particle.y,
+            color: particle.color
+          });
+          
+          if (particle.trail.length > particle.trailLength) {
+            particle.trail.shift();
+          }
+          
+          // 应用物理效果
+          particle.vy += particle.gravity;
+          particle.vx *= particle.friction;
+          particle.vy *= particle.friction;
+          
+          // 移动粒子
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          
+          // 衰减粒子
+          particle.life -= particle.decay;
+          
+          if (particle.life <= 0) {
+            this.particles.splice(i, 1);
+            continue;
+          }
+          
+          // 绘制粒子轨迹
+          this.drawTrail(particle.trail, particle.alpha);
+          
+          // 绘制粒子
+          this.ctx.beginPath();
+          this.ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+          
+          // 创建径向渐变使粒子看起来更亮
+          const gradient = this.ctx.createRadialGradient(
+            particle.x, particle.y, 0,
+            particle.x, particle.y, particle.radius
+          );
+          
+          gradient.addColorStop(0, `${particle.color}FF`);
+          gradient.addColorStop(1, `${particle.color}00`);
+          
+          this.ctx.fillStyle = gradient;
+          this.ctx.fill();
+        }
+      }
+      
+      drawTrail(trail, alpha = 1) {
+        if (trail.length < 2) return;
+        
+        for (let i = 1; i < trail.length; i++) {
+          const p1 = trail[i - 1];
+          const p2 = trail[i];
+          
+          this.ctx.beginPath();
+          this.ctx.moveTo(p1.x, p1.y);
+          this.ctx.lineTo(p2.x, p2.y);
+          
+          // 轨迹逐渐消失
+          const trailAlpha = alpha * (i / trail.length);
+          this.ctx.strokeStyle = `${p1.color}${Math.floor(trailAlpha * 255).toString(16).padStart(2, '0')}`;
+          this.ctx.lineWidth = 1;
+          this.ctx.stroke();
+        }
+      }
+      
+      animate() {
+        this.update();
+        this.animationId = requestAnimationFrame(() => this.animate());
+      }
+      
+      destroy() {
+        cancelAnimationFrame(this.animationId);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      }
+    }
+
+    // 显示祝福语的动画
+    function animateBlessings() {
+      const blessings = [
+        document.getElementById('blessing-1'),
+        document.getElementById('blessing-2'),
+        document.getElementById('blessing-3')
+      ];
+      
+      blessings.forEach((blessing, index) => {
+        setTimeout(() => {
+          blessing.style.animation = 'fadeInUp 1.5s ease forwards';
+          
+          // 祝福语显示时创建额外的烟花
+          for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+              window.fireworks.createFirework();
+            }, i * 300);
+          }
+          
+          // 添加文字脉动效果
+          setTimeout(() => {
+            addPulseEffect(blessing);
+          }, 500);
+        }, 1000 + index * 3000);
+      });
+    }
+    
+    // 添加文字脉动效果
+    function addPulseEffect(element) {
+      const pulseCount = 4;
+      let pulseIndex = 0;
+      
+      const pulse = () => {
+        element.style.transition = 'transform 0.6s ease, text-shadow 0.6s ease';
+        element.style.transform = 'scale(1.08)';
+        element.style.textShadow = `0 0 15px rgba(255,255,255,0.3), 
+                                    0 0 30px rgba(255,255,255,0.2),
+                                    0 0 45px rgba(255,255,255,0.1)`;
+        
+        setTimeout(() => {
+          element.style.transform = 'scale(1)';
+          element.style.textShadow = '0 0 10px rgba(255,255,255,0.1), 0 0 20px rgba(255,255,255,0.05)';
+          
+          pulseIndex++;
+          if (pulseIndex < pulseCount) {
+            setTimeout(pulse, 1200);
+          }
+        }, 600);
+      };
+      
+      pulse();
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 创建星空
+      createStars();
+      
+      // 创建彗星
+      createComets();
+      
+      // 创建烟花效果
+      window.fireworks = new Fireworks();
+      
+      // 动画显示祝福语
+      animateBlessings();
+      
+      // 初始化音频
+      const audio = document.querySelector('audio');
+      // 为了符合浏览器自动播放策略，在用户交互后确保音频播放
+      document.body.addEventListener('click', function startAudio() {
+        if (audio.paused) {
+          audio.play().catch(e => console.log('自动播放失败，需要用户交互'));
+        }
+        document.body.removeEventListener('click', startAudio);
+      });
+    });
+  </script>
+</body>
+</html>
